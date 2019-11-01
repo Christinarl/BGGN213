@@ -1,0 +1,381 @@
+---
+title: "Class 8 Machine Learning 1"
+author: "Christina Liem"
+date: "10/25/2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## K-means example
+
+We will make up some data to cluster, baby steps
+
+```{r}
+# Generate some example data for clustering 
+#the first argument calls up the first 30 points surrounded by -3, +3
+
+tmp <- c(rnorm(30,-3), rnorm(30,3)) 
+x <- cbind(x=tmp, y=rev(tmp)) 
+plot(x)
+```
+
+Use the kmeans() function setting k to 2 and nstart=20 
+
+
+```{r}
+k <- kmeans(x, centers = 2, nstart=20)
+```
+
+
+Inspect/print the results 
+```{r}
+k
+```
+
+Q. How many points are in each cluster? 
+```{r}
+k$size
+
+```
+
+
+Q. What ‘component’ of your result object details       
+      - cluster size?
+      
+```{r}
+ k$cluster
+```
+      
+```{r}
+table(k$cluster)
+```
+      
+      
+      
+      
+      - cluster assignment/membership?
+      
+```{r}
+
+```
+      
+      
+      - cluster center? 
+```{r}
+k$centers
+```
+
+      
+Plot x colored by the kmeans cluster assignment and
+      add cluster centers as blue points
+
+```{r}
+plot(x, col = k$cluster)
+```
+
+
+
+
+
+```{r}
+plot(x, col = k$cluster,)
+points(k$centers, col = "blue", pch=15)
+```
+
+
+
+##Hierarchial clustering in R
+
+Number of clusters is not known ahead of time
+two kinds:
+1. bottom-up
+2. top-down
+
+```{r}
+hc <- hclust(dist(x))
+#this function is not very helpful, it just tells you what function you were on
+hc
+```
+
+Plot my results
+```{r}
+plot(hc)
+abline(h=6, col ="red")
+#this function cuts the dendrogram wherever you set the height to
+cutree(hc, h=6)
+```
+
+The numbers at the bottom have two main cluters
+  the numbers on the left are >30
+  the numbers on the right are <30
+  
+hclust(dist(x)) is the main function in R we will use for clustering
+  
+```{r}
+grps <- cutree(hc, h=4)
+table(grps)
+```
+
+I can also cut the three to yield a given 'k' groups/clusters
+
+```{r}
+cutree(hc, k=2)
+```
+```{r}
+plot(x, col=grps)
+```
+
+
+Dendrograms are tree shaped structure used to interpret hierarchical clustering models 
+
+Linking methods
+-Complete: pairwise similarity between all observations in cluster 1 and cluster 2, and uses largest of similarities 
+
+-Single: same as above but uses smallest of similarities
+
+-Average: same as above but uses average of similarities
+
+-Centroid: ﬁnds centroid of cluster 1 and centroid of cluster 2, and uses similarity between two centroids 
+
+##Linkage in R
+# Using different hierarchical clustering methods 
+hc.complete <- hclust(d, method="complete") 
+hc.average  <- hclust(d, method="average") 
+hc.single   <- hclust(d, method="single")
+
+# Step 1. Generate some example data for clustering
+```{r}
+x <- rbind(
+ matrix(rnorm(100, mean=0, sd = 0.3), ncol = 2),   # c1
+ matrix(rnorm(100, mean = 1, sd = 0.3), ncol = 2), # c2
+ matrix(c(rnorm(50, mean = 1, sd = 0.3),           # c3 
+    rnorm(50, mean = 0, sd = 0.3)), ncol = 2)) 
+colnames(x) <- c("x", "y") 
+```
+
+# Step 2. Plot the data without clustering 
+```{r}
+plot(x)
+```
+
+# Step 3. Generate colors for known clusters 
+#         (just so we can compare to hclust results) 
+
+```{r}
+col <- as.factor( rep(c("c1","c2","c3"), each=50) ) 
+
+plot(x, col=col)
+
+```
+
+Q. Use the dist(), hclust(), plot() and cutree()
+    functions to return 2 and 3 clusters 
+
+```{r}
+grps <- cutree(hc, k=3)
+plot(x, col=col)
+```
+
+
+```{r}
+table(grps)
+```
+
+
+table(col, grps) means that 49 points were in group 1 and 1 point was in group 2, etc
+
+Q. How does this compare to your known 'col' groups?
+
+
+
+# Principal Component Analysis (PCA)
+PCA is designed to help us visualize data with a multitude of data points
+- it converts the correlations (or lack there of) among all cells into a representation we can more readily interpret (e.g. a 2D graph!)
+-cells that are highly correlated are clustered together
+
+
+## You can also download this file from the class website! 
+mydata <- read.csv("https://tinyurl.com/expression-CSV",                    row.names=1) 
+```{r}
+mydata <- read.csv("https://tinyurl.com/expression-CSV",                    row.names=1)
+
+head(mydata) 
+
+nrow(mydata)
+ncol(mydata)
+```
+
+
+##Let's do PCA
+```{r}
+pca <- prcomp(t(mydata), scale=TRUE)
+# See what is returned by the prcomp() function 
+attributes(pca) 
+```
+
+
+
+```{r}
+pca$x[,1]
+```
+
+## A basic PC1 vs PC2 2-D plot 
+```{r}
+plot(pca$x[,1], pca$x[,2])
+```
+
+
+There are 5 points on either side of PCA1
+
+```{r}
+summary(pca)
+```
+
+This tells you about the eigenvalues
+Cumulative proportion is the cumulative proportions of each of the PC groups' Proportion of Variance
+
+## Variance captured per PC  pca.var <- pca$sdev^2 
+ 
+```{r}
+pca.var <- pca$sdev^2 
+pca.var.per <- round(pca.var/sum(pca.var)*100, 1)
+barplot(pca.var.per, main="Scree Plot",
+        xlab="Principal Component", ylab="Percent Variation") 
+```
+
+Variance comes from the square of your SD
+
+```{r}
+plot(pca$x[,1:2], col=c("red", "red","red","red","red",
+                        "blue","blue","blue", "blue","blue"))
+```
+
+For coloring the point, you can also use the function "rep()" function
+i.e. rep("red",5)
+
+```{r}
+colnames(mydata)
+```
+
+in order to use the rep function, could do
+```{r}
+substr(colnames(mydata),1,2)
+```
+
+
+
+#Hands-on worksheet
+
+```{r}
+x <- read.csv("data/UK_foods.csv")
+
+```
+
+
+Q1. How many rows and columns are in your new data frame named x? What R functions could you use to answer this questions?
+## Complete the following code to find out how many rows and columns are in x?
+You can also use the dim() to achieve this answer
+
+```{r}
+nrow(x)
+ncol(x)
+```
+
+#Checking your data
+The view() is designed to display all your data
+head() or tail will take a portion of your data
+
+## Preview the first 6 rows
+
+```{r}
+head(x,6)
+tail(x,6)
+```
+
+We were actually not expecting 4 columns
+
+Here it appears that the row-names are incorrectly set as the first column of our x data frame (rather than set as proper row-names). This is very common error. Lets try to fix this up with the following code, which sets the rownames() to the first column and then removes the troublesome first column (with the -1 column index)
+
+# Note how the minus indexing works
+```{r}
+rownames(x) <- x[,1]
+x <- x[,-1]
+head(x)
+```
+
+Check dimensions:
+```{r}
+dim(x)
+```
+
+
+
+You could set the function up properly:
+
+
+```{r}
+x <- read.csv("data/UK_foods.csv", row.names = 1)
+head(x)
+```
+
+Q2. Which approach to solving the ‘row-names problem’ mentioned above do you prefer and why? Is one approach more robust than another under certain circumstances?
+
+I prefer correcting the row-names problem by addressing it in the code that retrieves the data. 
+
+##Spotting major differences and trends
+
+```{r}
+barplot(as.matrix(x), beside=T, col=rainbow(nrow(x)))
+```
+```{r}
+barplot(as.matrix(x), beside=T, col=rainbow(nrow(x)))
+```
+
+
+Q3: Changing what optional argument in the above barplot() function results in the following plot?
+
+
+
+
+
+
+
+```{r}
+pca <- prcomp( t(x) )
+summary(pca)
+```
+
+
+
+```{r}
+plot(pca$x[,1:2])
+text((pca$x[,1:2]), colnames(x))
+abline(h=0, col="grey", lty=2)
+abline(v=0, col="grey", lty=2)
+```
+
+
+## Lets focus on PC1 as it accounts for > 90% of variance 
+```{r}
+par(mar=c(10, 3, 0.35, 0))
+barplot( pca$rotation[,1], las=2 )
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
