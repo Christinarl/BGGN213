@@ -1,0 +1,300 @@
+---
+title: "Class 9"
+author: "Christina Liem"
+date: "10/30/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+wisc.df <- read.csv("WisconsinCancer.csv")
+```
+
+```{r}
+head(wisc.df)
+```
+
+
+```{r}
+View(wisc.df)
+```
+
+#head(wisc.df)
+Here we examine data from XXXX patient samples
+How do we do that?
+
+Here we examine data from `r nrow(wisc.df)` patient samples.
+
+how many cases are malignant vs benign?
+
+```{r}
+table(wisc.df$diagnosis)
+```
+In this data set we have 212 cancer and 357 non cancer
+
+```{r}
+x <- table(wisc.df$diagnosis)
+x
+```
+
+In this data set we have `r x["M"]` cancer and `r x["B"]` non cancer
+
+#Hands-on worksheet
+
+Q1. What type of object is returned from the read.csv() function?
+
+
+Q2. How many observations (i.e. patients) are in this dataset?
+569
+
+Q3. How many of the observations have a malignant diagnosis?
+table(wisc.df$diagnosis)
+212 cases
+    
+Q4. How many variables/features in the data are suffixed with _mean?
+colnames(wisc.df)
+10
+
+```{r}
+colnames(wisc.df)
+```
+
+```{r}
+grep("_mean", colnames(wisc.df), value = TRUE)
+```
+
+To find out how many there are I can call `length()` on the result of grep
+```{r}
+length(grep("_mean", colnames(wisc.df), value = TRUE))
+```
+
+##Performing PCA
+
+The next step in our analysis is to perform principal component analysis (PCA) on wisc.data
+Do we need to scale the data
+
+```{r}
+wisc.data <- as.matrix(wisc.df[3:32])
+```
+
+
+
+# Check column means and standard deviations
+
+```{r}
+colMeans(wisc.data)
+
+apply(wisc.data,2,sd)
+```
+
+
+
+```{r}
+round(apply(wisc.data, 2, sd),3)
+```
+using "2" applies it to the columns
+Looks like we need to use `scale=TRUE` here as our data are all over the shop...
+
+```{r}
+# Perform PCA on wisc.data by completing the following code
+wisc.pr <- prcomp(wisc.data, scale = TRUE )
+summary(wisc.pr)
+```
+
+Why did we use scale = TRUE?
+for comparison reasons
+
+
+Plot PC1 vs PC2 and color by M/B cancer/non-cancer
+```{r}
+plot(wisc.pr$x[,1], wisc.pr$x[,2])
+```
+
+Add color
+
+```{r}
+#with color
+plot(wisc.pr$x[, 1:2], col = wisc.df$diagnosis)
+```
+
+
+Q7. From your results, what proportion of the original variance is captured by the first principal components (PC1)?
+Look at summary(wisc.pr)
+Under cumultative proportion: 0.4427
+    
+
+```{r}
+x <- summary(wisc.pr)
+```
+
+```{r}
+x$importance
+```
+
+```{r}
+x$importance[,"PC1"]
+```
+
+The first PC captures `r x$importance[2, "PC1"] *100` of the original vaiance in the data set
+
+Q8. How many principal components (PCs) are required to describe at least 70% of the original variance in the data?
+Look at cumulative proportion. It takes 3 PCs
+
+```{r}
+which(x$importance[3,] > 0.7)[1]
+```
+
+Q9. How many principal components (PCs) are required to describe at least 90% of the original variance in the data?
+7 PCs
+
+```{r}
+which(x$importance[3,] > 0.9)[1]
+```
+
+#Hierarchial clustering
+
+hclust(x, center =3, nstart = 20)
+cutree(hc, k=3)
+
+```{r}
+# Scale the wisc.data data: data.scaled
+data.scaled <- scale(wisc.data)
+```
+
+```{r}
+data.dist <- dist(data.scaled)
+```
+
+
+```{r}
+wisc.hclust <- hclust(data.dist)
+```
+
+```{r}
+plot(wisc.hclust)
+```
+
+
+
+```{r}
+plot(wisc.hclust)
+abline(h=19, col="red", lty=2)
+```
+
+
+```{r}
+wisc.hclust.clusters <- cutree(wisc.hclust, k=4)
+```
+
+```{r}
+diagnosis <- (wisc.df$diagnosis)
+table(wisc.hclust.clusters, diagnosis)
+```
+
+The dendrogram above looks awful.
+
+Lets try clustering in PCA space
+
+we will take the results of `prcomp()` and build our distance matrix in PCA space rather than from our raw data.
+
+```{r}
+#take the first 7 PCs
+wisc.pr.hclust <- hclust(dist(wisc.pr$x[,1:7]), method = "ward.D2")
+plot(wisc.pr.hclust)
+```
+
+
+This tree looks much better and we can see that cutting the tree at a height ~70 would yield two clear clusters, lets check
+
+
+```{r}
+plot(wisc.pr.hclust)
+abline(h=70, col = "red")
+```
+
+
+And the cluster membership vector can be obtained from `cutree()`
+
+```{r}
+grps <- cutree(wisc.pr.hclust, h=70)
+table(grps)
+```
+
+```{r}
+table(wisc.df$diagnosis)
+```
+
+
+
+```{r}
+wisc.km <- kmeans(wisc.hclust.clusters, centers= 3, nstart= 20)
+table(wisc.km$cluster, diagnosis)
+```
+
+```{r}
+plot(wisc.pr$x[,1:2], col=grps)
+```
+
+
+
+```{r}
+plot(wisc.pr$x[,1:2], col=diagnosis)
+```
+
+
+## prediction
+
+We will use the predict() function that will take our PCA model from before and new cancer cell data and project that data onto our PCA space.
+
+```{r}
+#url <- "new_samples.csv"
+url <- "https://tinyurl.com/new-samples-CSV"
+new <- read.csv(url)
+npc <- predict(wisc.pr, newdata=new)
+npc
+```
+
+Add these new patients predictions to our main result figure PC1 vs PC2 plot.
+
+```{r}
+plot(wisc.pr$x[, 1:2], col = wisc.df$diagnosis)
+points(npc[,1], npc[,2], col="blue", pch=15, cex=3)
+text(npc[,1], npc[,2], labels=c(1,2), col="white")
+```
+
+
+```{r}
+wisc.pr$scale
+```
+
+
+
+Q22. Which of these new patients should we prioritize for follow up based on your results?
+patients clustered in 2 because they have malignant cancer
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
