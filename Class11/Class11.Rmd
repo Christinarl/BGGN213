@@ -51,12 +51,6 @@ Q2:  Type HIV in the PDB website search box on the home page and determine how m
 
 # Working with biomolecular data in R
 
-```{r}
-library(bio3d)
-pdb <- read.pdb(file = "1hsg")
-pbd
-```
-
 
 ```{r}
 pdb$atom
