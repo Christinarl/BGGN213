@@ -12,3 +12,4 @@ Contents:
 -Class14 [Transcriptomics and the analysis of RNA-Seq data]. (https://github.com/Christinarl/BGGN213/blob/master/Class14/Class%2014.Rmd)
 -Class15 [Genome annotation and the interpretation of gene lists]. (https://github.com/Christinarl/BGGN213/blob/master/Class15/Class%2015.Rmd)
 -Class16 [Biological network analysis]. (https://github.com/Christinarl/BGGN213/blob/master/Class16/Class%2016.Rmd)
+-Class18 [Cancer genomics]. (https://github.com/Christinarl/BGGN213/blob/master/Class18/Class%2018.Rmd)
