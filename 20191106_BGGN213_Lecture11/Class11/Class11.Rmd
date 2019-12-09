@@ -1,0 +1,182 @@
+---
+title: "Class 11_ Structural Bioinformatics 1"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## What is the PDB database
+
+
+Download PDB compostition stats from website
+http://www.rcsb.org/stats/summary
+```{r}
+data <- read.csv("Data Export Summary.csv")
+data
+```
+
+```{r}
+total <- sum(data$Total)
+total
+```
+
+
+
+Q1:  Download a CSV file from the PDB site (accessible from “Analyze” -> “PDB Statistics” > “by Experimental Method and Molecular Type”.  Move this CSV file into your RStudio project and determine the percentage of structures solved by X-Ray and Electron Microscopy.  
+
+
+
+```{r}
+data$Total
+```
+
+```{r}
+ans <- data$Total/sum(data$Total) * 100
+names(ans) <- data$Experimental.Method
+round(ans,2)
+```
+
+
+Also can you determine what proportion of structures are protein? Aim to have a rendered GitHub document with working code that yields your answers.
+
+
+```{r}
+round(sum(data$Proteins)/sum(data$Total) * 100, 2)
+```
+
+Q2:  Type HIV in the PDB website search box on the home page and determine how many HIV-1 protease structures are in the current PDB?
+
+
+# Working with biomolecular data in R
+
+```{r}
+library(bio3d)
+pdb <- read.pdb(file = "1hsg")
+pbd
+```
+
+
+```{r}
+pdb$atom
+```
+
+
+```{r}
+pdb$atom[1,"resid"]
+```
+
+
+```{r}
+aa321(pdb$atom[,"resid"])
+```
+
+```{r}
+atom.select.pdb(pdb = pdb, string = "calpha")
+```
+
+```{r}
+ca.ind <- atom.select(pdb, "calpha")
+ca.ind
+```
+
+# Print details of the first few selected atoms
+
+```{r}
+head( pdb$atom[ca.ind$atom, ] )
+```
+
+# And selected xyz coordinates
+
+```{r}
+head( pdb$xyz[, ca.ind$xyz] )
+```
+
+
+
+```{r}
+# Select chain A
+ca.ind <-atom.select(pdb, chain="A")
+# Select C-alphas of chain A
+ca.ind <-atom.select(pdb, "calpha", chain="A")
+# We can combine multiple selection criteria to return their intersection
+cab.ind <-atom.select(pdb, elety=c("CA","CB"), chain="A", resno=10:20)
+
+```
+
+
+
+>Q8. Use the Bio3D write.pdb() function to write out a protein only PDB file for viewing in VMD.  Also write out a second separate PDB file for the ligand with residue name MK1
+
+First select "protein" then write out a file: "1hsg_protein.pdb"
+
+```{r}
+#atom.select()
+atom.select(pdb, "ligand", value = TRUE)
+#write.pdb()
+
+```
+
+
+```{r}
+#atom.select()
+atom.select(pdb, "protein", value = TRUE)
+#write.pdb()
+
+```
+
+```{r}
+#atom.select()
+prot <- atom.select(pdb, "protein", value = TRUE)
+#write.pdb()
+write.pdb(prot, file ="1hsg_protein.pdb")
+
+```
+
+
+Do the same for the ligand
+
+
+```{r}
+lig <- atom.select(pdb, "ligand", value = TRUE)
+write.pdb(lig, file = "1hsg_ligand.pdb")
+```
+
+
+```{r}
+library(bio3d)
+#view lig
+view(lig)
+view(pdb, "overview", col"sse")
+```
+
+"view" doesn't work but it calls up the ligand
+
+```{r}
+# The 'devtools' package allows us to install development versions
+install.packages("devtools")
+```
+
+
+
+```{r}
+# Load the package
+library("bio3d.view")
+pdb <-read.pdb("1hel")
+# Normal mode analysis calculation
+modes <-nma(pdb)
+m7 <-mktrj(modes, 
+ mode=7,
+ file="mode_7.pdb")
+
+view(m7, col=vec2color( rmsf(m7) ))
+```
+
+
+
+
+
+
+
+
